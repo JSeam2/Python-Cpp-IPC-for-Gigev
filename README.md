@@ -17,7 +17,7 @@ $ make
 $ ./genicam
 ```
 
-4. To test the python reader
+4. To test the python reader. This sample example is a possible approach to interface with the camera output to use the data in python for processing (eg. opencv2, deep learning, etc.).
 ```
 $ cd ..
 

@@ -12,11 +12,14 @@
 //using namespace GenICam;
 //using namespace GenApi;
 
+// print statements
+#define PRINT_STATEMENTS 0
+
 // Turbo Drive mode https://www.teledynedalsa.com/en/learn/knowledge-center/turbodrive/
 #define TURBO_DRIVE	0
 
 // Display camera view in display window
-#define DISPLAY_WINDOW 1 
+#define DISPLAY_WINDOW 0
 
 
 #define MAX_NETIF					8
@@ -159,9 +162,8 @@ void * ImageDisplayThread( void *context)
 							Display_Image( displayContext->View, displayContext->depth, img->w, img->h, displayContext->convertBuffer );				
 #endif
 							// write the file to stdout for communication with other programs
-							fwrite(displayContext->convertBuffer, 1, 1, stdout);
+							fwrite(displayContext->convertBuffer, displayContext->depth * img->w * img->h, 1, stdout);
 							fflush(stdout);  // flush buffer after writing file 
-
 						}
 						else
 						{
@@ -169,17 +171,20 @@ void * ImageDisplayThread( void *context)
 							// Display the image in the (supported) received format. 
 							Display_Image( displayContext->View, img->d,  img->w, img->h, img->address );
 #endif 
+							// print depth width and height for debugging purposes
+							// printf("Width %d\n", img->w);
+							// printf("Height %d\n", img->h);
+							// printf("Depth %d\n", img->d);
 							// write the file to stdout for communication with other programs
-							fwrite(img->address, 1, 1, stdout);
+							fwrite(img->address, img->d * img->w * img->h, 1, stdout);
 							fflush(stdout);
- 
-							// Transfer the image to socket
-							// TransferImageToSocket( displaContext->View, display->depth, img->w, img->h, img->address);
 						}
 					}
 					else
 					{
+#if PRINT_STATEMENTS
 						printf("Not displayable\n");
+#endif
 					}
 				}
 				else
@@ -240,10 +245,7 @@ int IsTurboDriveAvailable(GEV_CAMERA_HANDLE handle)
 
 int main(int argc, char* argv[])
 {	
-	// socket stuff
-
-
-
+	// Setup Gev
 	GEV_DEVICE_INTERFACE  pCamera[MAX_CAMERAS] = {0};
 	GEV_STATUS status;
 	int numCamera = 0;
@@ -259,10 +261,12 @@ int main(int argc, char* argv[])
 	uint32_t macLow = 0; // Low 32-bits of the mac address (for file naming).
 
 // Helper info
+#if PRINT_STATEMENTS
 #if DISPLAY_WINDOW
 	printf("*** DISPLAY WINDOW ENABLED, TO DISABLE SET DISPLAY_WINDOW VARIABLE TO 0 IN GENICAM.CPP ***\n");
 #else
 	printf("*** DISPLAY WINDOW DISABLED, TO DISABLE SET DISPLAY_WINDOW VARIABLE TO 1 IN GENICAM.CPP ***\n");
+#endif
 #endif
 
 	// Boost application RT response (not too high since GEV library boosts data receive thread to max allowed)
@@ -312,7 +316,9 @@ int main(int argc, char* argv[])
 
 	status = GevGetCameraList( pCamera, MAX_CAMERAS, &numCamera);
 
+#if PRINT_STATEMENTS
 	printf ("%d camera(s) on the network\n", numCamera);
+#endif
 
 	// Select the first camera found (unless the command line has a parameter = the camera index)
 	if (numCamera != 0)
@@ -322,7 +328,9 @@ int main(int argc, char* argv[])
 			sscanf(argv[1], "%d", &camIndex);
 			if (camIndex >= (int)numCamera)
 			{
+#if PRINT_STATEMENTS
 				printf("Camera index out of range - only %d camera(s) are present\n", numCamera);
+#endif
 				camIndex = -1;
 			}
 		}
@@ -353,21 +361,6 @@ int main(int argc, char* argv[])
 			//====================================================================
 			// Open the camera.
 			status = GevOpenCamera( &pCamera[camIndex], GevExclusiveMode, &handle);
-			if (status == 0)
-			{
-				//=================================================================
-				// GenICam feature access via Camera XML File enabled by "open"
-				// 
-				// Get the name of XML file name back (example only - in case you need it somewhere).
-				//
-				char xmlFileName[MAX_PATH] = {0};
-				status = GevGetGenICamXML_FileName( handle, (int)sizeof(xmlFileName), xmlFileName);
-				if (status == GEVLIB_OK)
-				{
-					printf("XML stored as %s\n", xmlFileName);
-				}
-				status = GEVLIB_OK;
-			}
 			// Get the low part of the MAC address (use it as part of a unique file name for saving images).
 			// Generate a unique base name to be used for saving image files
 			// based on the last 3 octets of the MAC address.
@@ -435,7 +428,9 @@ int main(int argc, char* argv[])
 					//=================================================================
 					// Set up a grab/transfer from this camera
 					//
+#if PRINT_STATEMENTS
 					printf("Camera ROI set for \n\tHeight = %d\n\tWidth = %d\n\tPixelFormat (val) = 0x%08x\n", height,width,format);
+#endif
 
 					maxHeight = height;
 					maxWidth = width;
@@ -528,6 +523,7 @@ int main(int argc, char* argv[])
 								GevSetFeatureValue(handle, "transferTurboMode", sizeof(UINT32), &val);
 								GevGetFeatureValue(handle, "transferTurboMode", &type, sizeof(UINT32), &val);
 
+#if PRINT_STATEMENTS
 								if (val == 1)
 								{
 									printf("TurboMode Enabled\n");
@@ -536,10 +532,13 @@ int main(int argc, char* argv[])
 								{
 									printf("TurboMode Disabled\n");
 								}
+#endif
 							}
 							else 
 							{
+#if PRINT_STATEMENTS
 								printf("*** TurboDrive is NOT Available for this device/pixel format combination ***\n");
+#endif
 							}
 
 							// Stream images
@@ -548,7 +547,9 @@ int main(int argc, char* argv[])
 								memset(bufAddress[i], 0, size);
 							}
 							status = GevStartTransfer( handle, -1);
+#if PRINT_STATEMENTS
 							if (status != 0) printf("Error starting grab - 0x%x  or %d\n", status, status); 
+#endif
 
 							// Setup complete
 							setup = 1;
@@ -577,7 +578,9 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
+#if PRINT_STATEMENTS
 				printf("Error : 0x%0x : opening camera\n", status);
+#endif
 			}
 		}
 	}

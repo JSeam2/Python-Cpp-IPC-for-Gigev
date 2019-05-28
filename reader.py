@@ -1,15 +1,33 @@
 import subprocess
+import numpy as np
+import cv2
+import traceback as tb
+import pickle
+import matplotlib.pyplot as plt
 
-proc = subprocess.Popen(
+# Obtained from running genicam with print statements
+IMG_HEIGHT = 1024
+IMG_WIDTH = 1280
+IMG_DEPTH = 1
+
+process = subprocess.Popen(
     "./cpp/genicam",
-    stdin=subprocess.PIPE,
+    # stdin=subprocess.PIPE,
     stdout=subprocess.PIPE)
 
-x = 0
+while True:
+    try:
+        data = process.stdout.read(IMG_HEIGHT * IMG_WIDTH)
+        image = np.fromstring(data, dtype='uint8')
+        image = image.reshape((IMG_HEIGHT, IMG_WIDTH))
+        print(image)
+        # cv2.imshow('Video', image)
+        plt.imshow(image)
+        plt.show()
+    except ValueError as e:
+        tb.print_exc()
+        continue
 
-while x < 200:
-    data = proc.stdout.read(150)
-    if data != b'':
-        print(data)
-    x += 1
-    proc.wait()
+
+process.stdout.flush()
+cv2.destroyAllWindows()
