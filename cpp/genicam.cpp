@@ -158,17 +158,21 @@ void * ImageDisplayThread( void *context)
 #if DISPLAY_WINDOW
 							Display_Image( displayContext->View, displayContext->depth, img->w, img->h, displayContext->convertBuffer );				
 #endif
+							// write the file to stdout for communication with other programs
+							fwrite(displayContext->convertBuffer, 1, 1, stdout);
+							fflush(stdout);  // flush buffer after writing file 
 
-							// Transfer the image to socket
-							// TransferImageToSocket( displaContext->View, display->depth, img->w, img->h, displayContext->convertBuffer );
 						}
 						else
 						{
 #if DISPLAY_WINDOW
 							// Display the image in the (supported) received format. 
 							Display_Image( displayContext->View, img->d,  img->w, img->h, img->address );
-#endif
-
+#endif 
+							// write the file to stdout for communication with other programs
+							fwrite(img->address, 1, 1, stdout);
+							fflush(stdout);
+ 
 							// Transfer the image to socket
 							// TransferImageToSocket( displaContext->View, display->depth, img->w, img->h, img->address);
 						}
@@ -235,7 +239,11 @@ int IsTurboDriveAvailable(GEV_CAMERA_HANDLE handle)
 }
 
 int main(int argc, char* argv[])
-{
+{	
+	// socket stuff
+
+
+
 	GEV_DEVICE_INTERFACE  pCamera[MAX_CAMERAS] = {0};
 	GEV_STATUS status;
 	int numCamera = 0;

@@ -777,7 +777,6 @@ static void* displayHandler(void *context)
 }
 
 
-
 int Display_Image( X_VIEW_HANDLE xhandle, int depth, int width, int height, void *image)
 {
    if (xhandle != NULL)
@@ -795,6 +794,7 @@ int Display_Image( X_VIEW_HANDLE xhandle, int depth, int width, int height, void
    }
    return 0;
 }
+
 
 static int Copy16BitMonoDataToX11Image(X_VIEW_HANDLE xhandle, int width, int height, 
 								int src_left, int src_top, int src_width, int src_height, 
