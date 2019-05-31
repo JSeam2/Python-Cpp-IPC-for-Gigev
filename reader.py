@@ -23,7 +23,7 @@ while True:
         # cv2.imshow('Video', image)
         plt.imshow(image)
         plt.show()
-    except ValueError as e:
+    except ValueError:
         tb.print_exc()
         continue
 
