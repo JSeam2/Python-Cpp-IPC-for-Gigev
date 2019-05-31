@@ -2,7 +2,6 @@ import subprocess
 import numpy as np
 import cv2
 import traceback as tb
-import pickle
 import matplotlib.pyplot as plt
 
 # Obtained from running genicam with print statements
